@@ -1,258 +1,84 @@
 #!/usr/bin/env python
-
 import sys
 import os
+import subprocess
 sys.path.insert(0, os.getenv("GITPYTHONLIB","."))
 
-import bzrlib.branch
+from bzrlib.branch import Branch
 
-import binascii
 from git_remote_helpers.util import die, debug, warn, start_command, run_command
 from git_remote_helpers.git.repo import GitRepo
-from git_remote_helpers.git.exporter import GitExporter
-from git_remote_helpers.git.importer import GitImporter
-from git_remote_helpers.git.non_local import NonLocalGit
-
 
 
 class Bzr(object):
     def __init__(self, alias, url):
         self.alias = alias
         self.url = url
+        self._branch = None
 
     def get_branch(self):
-        try:
-            return bzrlib.branch.Branch.open(self.url)
-        except Exception, e:
-            die('Could not open branch at %s : %s' % (self.url, e))
+        """Return the branch object from bzrlib."""
+        if not self._branch:
+            try:
+                self._branch = Branch.open(self.url)
+            #FIXME: blech, catch something more precise
+            except Exception, e:
+                die('Could not open branch at %s : %s', self.url, e)
+
+        return self._branch
 
     branch = property(fget=get_branch)
 
-#def local_repo(repo, path):
-#    """Returns a git repository object initalized for usage.
-#    """
-#
-#    local = GitRepo(path)
-#
-#    local.non_local = None
-#    local.gitdir = repo.gitdir
-#    local.alias = repo.alias
-#    local.prefix = repo.prefix
-#    local.hash = repo.hash
-#    local.get_base_path = repo.get_base_path
-#    local.exporter = GitExporter(local)
-#    local.importer = GitImporter(local)
-#
-#    return local
-
 
 def do_capabilities(repo, args):
-    """Prints the supported capabilities.
-    """
-
-    print "fetch"
-    ##print "import"
-    ##print "export"
-    ##print "gitdir"
-    ##print "refspec refs/heads/*:refs/bzr/branches/*"
+    """Expose the supported capabilities."""
+    print "import"
+    #print "fetch"
+    print "push"
+    #print "refspec refs/heads/*:refs/bzr/branches/*"
 
     print # end capabilities
 
-def fetch(repo):
-    # TODO only fetch new revisions
-    prev_commit = None
-    all_history = repo.branch.revision_history()
-    for i, rev_id in enumerate(all_history):
-        warn("importing %d of %d commit" % (i, len(all_history)))
-        prev_commit = fetch_one(repo, rev_id, prev_commit)
-
-    return prev_commit
 
 def do_list(repo, args):
-    """Lists all known references.
-    """
-
-    prev_commit = fetch(repo)
+    """Lists all known references."""
+    prev_commit = repo.branch.last_revision()
 
     # FIXME replace by actual branch name
-    print "%s HEAD" % prev_commit
     print "%s refs/heads/master" % prev_commit
+    print "@refs/heads/master HEAD"
 
-    print # end list
+    print  # end list
 
-
-#def update_local_repo(repo):
-#    """Updates (or clones) a local repo.
-#    """
-#
-#    if repo.local:
-#        return repo
-#
-#    path = repo.non_local.clone(repo.gitdir)
-#    repo.non_local.update(repo.gitdir)
-#    repo = local_repo(repo, path)
-#    return repo
-
-
-def fetch_tree(tree, rev_id, folder=None):
-    folder = folder or ''
-    tree_content = []
-    treewalk = tree.list_files(from_dir=folder, recursive=False)
-    try:
-        while True:
-            tree_elem = treewalk.next()
-            base_name = tree_elem[0]
-            if tree_elem[2] == 'directory':
-                tree_hash = fetch_tree(tree, rev_id, folder=folder+'/'+tree_elem[0])
-                tree_content.append('40000 %s\0%s'%(base_name.encode('utf-8'),
-                                                    binascii.a2b_hex(tree_hash)))
-            if tree_elem[2] == 'file':
-                file_id = tree_elem[3]
-                base_name = tree_elem[0]
-                content = tree.get_file(file_id).read()
-                command = start_command(args=['git', 'hash-object',
-                                              '--stdin',
-                                              '-t', 'blob',
-                                              '-w',
-                                             ])
-                output, errors = command.communicate(content)
-                blob_hash = output.strip('\n')
-
-                perm = (tree_elem[4].executable and '755') or '644'
-                tree_content.append('100%s %s\0%s'%(perm,
-                                                    base_name.encode('utf-8'),
-                                                    binascii.a2b_hex(blob_hash)))
-    except StopIteration:
-        pass
-
-    # write rev trees
-    content = ''.join(tree_content)
-    command = start_command(args=['git', 'hash-object',
-                                  '--stdin',
-                                  '-t', 'tree',
-                                  '-w',
-                                 ])
-    output, errors = command.communicate(content)
-    tree_hash = output.strip('\n')
-    return tree_hash
-
-# FIXME bzr history is linear? maybe support for multiple parents?
-def fetch_one(repo, rev_id, parent=None):
-    """Imports a single revision and write it to the database.
-
-    The object hash of the revision is returned.
-    """
-    # write rev blobs
-    tree = repo.branch.repository.revision_tree(rev_id)
-    tree.lock_read()
-    tree_root_hash = fetch_tree(tree, rev_id)
-    tree.unlock()
-
-    # write commit
-    # TODO write recursive
-    # TODO support multiple parents
-    revision = repo.branch.repository.get_revision(rev_id)
-    commit = ['tree %s' % tree_root_hash]
-    if parent:
-        commit.append('parent %s' % parent)
-    timestamp = "%d %+03d%02d" % (revision.timestamp,
-                                  revision.timezone/3600,
-                                  revision.timezone%3600)
-    commit.append('author %s %s' % (revision.committer, timestamp))
-    commit.append('committer %s %s' % (revision.committer, timestamp))
-    # prepend message with blank line
-    commit.append('')
-    commit.append(revision.message)
-
-    content = '\n'.join(commit)
-    command = start_command(args=['git', 'hash-object',
-                                  '--stdin',
-                                  '-t', 'commit',
-                                  '-w',
-                                 ])
-    output, errors = command.communicate(content.encode('utf-8'))
-    commit_hash = output.strip('\n')
-
-    return commit_hash
-
-
-def do_fetch(repo, args):
-    """Fetch the given object, writing it to the database
-    """
-    # print blank line when done
-    print ""
 
 def do_import(repo, args):
-    """Exports a fast-import stream from testgit for git to import.
-    """
-
+    """Export a fast-import stream from Bazaar for git to import."""
     if len(args) != 1:
         die("Import needs exactly one ref")
 
     #if not repo.gitdir:
     #    die("Need gitdir to import")
 
-    x = 42
-#    repo = update_local_repo(repo)
-#    repo.exporter.export_repo(repo.gitdir)
-
-
-def do_export(repo, args):
-    """Imports a fast-import stream from git to bzr.
-    """
-
-    if not repo.gitdir:
-        die("Need gitdir to export")
-
-#    dirname = repo.get_base_path(repo.gitdir)
-
-    if not os.path.exists(dirname):
-        os.makedirs(dirname)
-
-#    path = os.path.join(dirname, 'testgit.marks')
-#    print path
-#    print path if os.path.exists(path) else ""
-#    sys.stdout.flush()
-#
-#    update_local_repo(repo)
-#    repo.importer.do_import(repo.gitdir)
-#    repo.non_local.push(repo.gitdir)
-
-
-def do_gitdir(repo, args):
-    """Stores the location of the gitdir.
-    """
-
-    if not args:
-        die("gitdir needs an argument")
-
-    repo.gitdir = ' '.join(args)
+    subprocess.Popen(['bzr', 'fast-export', repo.url])
 
 
 COMMANDS = {
     'capabilities': do_capabilities,
     'list': do_list,
     'import': do_import,
-    'export': do_export,
-    'gitdir': do_gitdir,
-    'fetch': do_fetch,
+    #'push': do_push,
 }
 
 
 def sanitize(value):
-    """Cleans up the url.
-    """
-
+    """Clean up the url."""
     if value.startswith('bzr::'):
         value = value[5:]
-
     return value
 
 
 def read_one_line(repo):
-    """Reads and processes one command.
-    """
-
+    """Read and process one command."""
     line = sys.stdin.readline()
 
     cmdline = line
@@ -279,9 +105,8 @@ def read_one_line(repo):
     return True
 
 
-def main(args):
-    """Starts a new remote helper for the specified repository.
-    """
+if __name__ == '__main__':
+    args = sys.argv
 
     if len(args) != 3:
         die("Expecting exactly three arguments.")
@@ -301,14 +126,11 @@ def main(args):
     args[1] = alias
     args[2] = url
 
-    repo = Bzr(alias, url)
-
     debug("Got arguments %s", args[1:])
+
+    repo = Bzr(alias, url)
 
     more = True
 
     while (more):
         more = read_one_line(repo)
-
-if __name__ == '__main__':
-    sys.exit(main(sys.argv))

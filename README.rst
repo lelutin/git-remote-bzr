@@ -2,7 +2,7 @@ git-remote-bzr
 ==============
 
 This is a Bazaar remote helper for git. It uses the remote helpers
-functionality introduced recently (1.7.2) in git.
+functionality introduced recently in git.
 
 As this is only an early proof of concept, it is not recommended for any
 use, except maybe documentation about using git remote helpers or satisfying
@@ -12,28 +12,27 @@ What may work:
 
 - small repositories
 - cloning local branches
-- being slower than bzr (excellent waste of time!)
 
 What certainly doesn't:
 
 - empty repositories
-- pushing
-- listing remote refs (they are imported first)
-- using differential import (every file of every revision is imported)
-- linking with bzr refs (git-fetch pulls the whole repository)
+- pushing (check out the bug report at: https://bugs.launchpad.net/bzr-fastimport/+bug/347729)
+- listing remote refs (is Bzr even capable of this via HTTP?)
+- using differential import (every revision is exported from bzr each time)
 
 
 Requirements
 ------------
 
-- git 1.7.2-rc1 or later
-- python 2.6
-- bzrlib
+- git 1.6.6 or later
+- python 2.5 +
+- bzr 2.x
+- bzr-fastimport latest revision (cd ~/.bazaar/plugins; bzr branch lp:bzr-fastimport fastimport)
 
 
 Usage
 -----
 
-1. export the checkout to you PATH variable for git to find it
-2. git checkout bzr::url-of-bzr-repository
+1. export the directory that contains git-remote-bzr to your PATH variable for git to find it
+2. git clone bzr::url-of-bzr-repository  # Here the url after bzr:: can be anything that bzr accepts
 
