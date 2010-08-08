@@ -12,13 +12,13 @@ What may work:
 
 - small repositories
 - cloning local branches
+- pushing (currently with a flaky dependency -- see below. once the following bug is fixed, the dependency won't be flaky anymore: https://bugs.launchpad.net/bzr-fastimport/+bug/347729)
 
 What certainly doesn't:
 
 - empty repositories
-- pushing (check out the bug report at: https://bugs.launchpad.net/bzr-fastimport/+bug/347729)
-- listing remote refs (is Bzr even capable of this via HTTP?)
-- using differential import (every revision is exported from bzr each time)
+- listing remote refs (Bzr doesn't support it via HTTP -- one remote per branch will do the trick)
+- using differential import (every revision is exported from bzr each time) -- although the use of mark files should fix the situation, stay tuned :).
 
 
 Requirements
