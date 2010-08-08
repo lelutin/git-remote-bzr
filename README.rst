@@ -27,7 +27,7 @@ Requirements
 - git 1.6.6 or later
 - python 2.5 +
 - bzr 2.x
-- bzr-fastimport latest revision (cd ~/.bazaar/plugins; bzr branch lp:bzr-fastimport fastimport)
+- bzr-fastimport : for now, only the branch lp:~ian-clatworthy/bzr-fastimport/new-marks-format with the patch inside patches/fastimport-sane-marks.patch works for pushing back your commits to the bzr branch. With g-r-b being the full path to the git-remote-bzr source directory, do: (mkdir -p ~/.bazaar/plugins/; cd ~/.bazaar/plugins; bzr branch lp:~ian-clatworthy/bzr-fastimport/new-marks-format fastimport; patch -p0 < g-r-b/patches/fastimport-sane-marks.patch)
 
 
 Usage

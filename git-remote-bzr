@@ -52,21 +52,42 @@ def do_list(repo, args):
 
 
 def do_import(repo, args):
-    """Export a fast-import stream from Bazaar for git to import."""
+    """Import a fast-import stream that is exported from Bazaar."""
     if len(args) != 1:
         die("Import needs exactly one ref")
 
     #if not repo.gitdir:
     #    die("Need gitdir to import")
 
-    subprocess.Popen(['bzr', 'fast-export', repo.url])
+    bzrp = subprocess.Popen(['bzr', 'fast-export', repo.url])
+    bzrp.wait()
+
+
+def do_push(repo, args):
+    """Send revisions to the Bazaar repository."""
+    if len(args) != 1:
+        die("Push needs at least one refspec")
+
+    debug("Push got refspec: %s", args[0])
+    src, dst = args[0].split(":", 1)
+
+    if src.startswith("refs/heads/"):
+        src = src[11:]
+
+    debug("Source: %s", src)
+    debug("Destination: %s", repo.url)
+
+    gitp = subprocess.Popen(["git", "fast-export", src], stdout=subprocess.PIPE)
+    bzrp = subprocess.Popen(["bzr", "fast-import", "-", repo.url], stdin=gitp.stdout)
+    bzrp.wait()
+    print "error %s 'Not implemented'" % dst
 
 
 COMMANDS = {
     'capabilities': do_capabilities,
     'list': do_list,
     'import': do_import,
-    #'push': do_push,
+    'push': do_push,
 }
 
 

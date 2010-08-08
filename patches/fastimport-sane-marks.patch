@@ -1,0 +1,13 @@
+=== modified file 'processors/generic_processor.py'
+--- processors/generic_processor.py	2009-08-21 16:29:36 +0000
++++ processors/generic_processor.py	2010-08-08 00:32:44 +0000
+@@ -131,7 +131,7 @@
+         if self.params.get("import-marks") is not None:
+             mark_info = marks_file.import_marks(self.params.get("import-marks"))
+             if mark_info is not None:
+-                self.cache_mgr.revision_ids = mark_info[0]
++                self.cache_mgr.revision_ids = mark_info
+             self.skip_total = False
+             self.first_incremental_commit = True
+         else:
+
