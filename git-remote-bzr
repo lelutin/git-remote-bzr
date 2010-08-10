@@ -6,8 +6,7 @@ sys.path.insert(0, os.getenv("GITPYTHONLIB","."))
 
 from bzrlib.branch import Branch
 
-from git_remote_helpers.util import die, debug, warn, start_command, run_command
-from git_remote_helpers.git.repo import GitRepo
+from git_remote_helpers.util import die, debug, warn
 
 
 class Bzr(object):
