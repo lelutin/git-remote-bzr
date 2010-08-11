@@ -2,6 +2,7 @@
 import sys
 import os
 import subprocess
+import errno
 sys.path.insert(0, os.getenv("GITPYTHONLIB","."))
 
 from bzrlib.branch import Branch
@@ -41,10 +42,8 @@ def do_capabilities(repo, args):
 
 def do_list(repo, args):
     """Lists all known references."""
-    prev_commit = repo.branch.last_revision()
-
-    # FIXME replace by actual branch name
-    print "%s refs/heads/master" % prev_commit
+    # Branch discovery is not implemented.
+    print "? refs/heads/master"
     print "@refs/heads/master HEAD"
 
     print  # end list
@@ -55,10 +54,14 @@ def do_import(repo, args):
     if len(args) != 1:
         die("Import needs exactly one ref")
 
-    #if not repo.gitdir:
-    #    die("Need gitdir to import")
+    marks_file = os.path.join(repo.bzrdir, "%s.bzr.marks" % repo.alias)
 
-    bzrp = subprocess.Popen(['bzr', 'fast-export', repo.url])
+    cmd = ['bzr', 'fast-export', '--export-marks=%s' % marks_file]
+    if os.path.exists("%s" % marks_file):
+        cmd += ['--import-marks=%s' % marks_file]
+
+    debug("Calling sub-command: %s", ' '.join(cmd))
+    bzrp = subprocess.Popen(cmd + [repo.url])
     bzrp.wait()
 
 
@@ -76,10 +79,32 @@ def do_push(repo, args):
     debug("Source: %s", src)
     debug("Destination: %s", repo.url)
 
-    gitp = subprocess.Popen(["git", "fast-export", src], stdout=subprocess.PIPE)
-    bzrp = subprocess.Popen(["bzr", "fast-import", "-", repo.url], stdin=gitp.stdout)
+    git_marks_file = os.path.join(repo.bzrdir, "%s.git.marks" % repo.alias)
+    git_cmd = ["git", "fast-export", "--export-marks=%s" % git_marks_file]
+    if os.path.exists(git_marks_file):
+        git_cmd += ["--import-marks=%s" % git_marks_file]
+    git_cmd += [src]
+
+    bzr_marks_file = os.path.join(repo.bzrdir, "%s.bzr.marks" % repo.alias)
+    bzr_cmd = ["bzr", "fast-import", "--export-marks=%s" % bzr_marks_file]
+    if os.path.exists(bzr_marks_file):
+        bzr_cmd += ["--import-marks=%s" % bzr_marks_file]
+    bzr_cmd += ["-", repo.url]
+
+    debug("Calling sub-command: %s", ' '.join(git_cmd))
+    gitp = subprocess.Popen(git_cmd, stdout=subprocess.PIPE)
+    debug("Calling sub-command: %s", ' '.join(bzr_cmd))
+    bzrp = subprocess.Popen(bzr_cmd, stdin=gitp.stdout)
     bzrp.wait()
-    print "error %s 'Not implemented'" % dst
+
+    debug("bzr fast-import return code: %d" % bzrp.returncode)
+    if bzrp.returncode:
+        print "error %s 'bzr fast-import returned with code %d'" % (
+                dst, bzrp.returncode)
+    else:
+        print "ok %s" % dst
+
+    print  # End the status report
 
 
 COMMANDS = {
@@ -136,6 +161,8 @@ if __name__ == '__main__':
         import git_remote_helpers.util
         git_remote_helpers.util.DEBUG = True
 
+    debug("Got arguments %s", args[1:])
+
     alias = sanitize(args[1])
     url = sanitize(args[2])
 
@@ -146,9 +173,28 @@ if __name__ == '__main__':
     args[1] = alias
     args[2] = url
 
-    debug("Got arguments %s", args[1:])
-
     repo = Bzr(alias, url)
+
+    repo.gitdir = os.getenv('GIT_DIR')
+    if not repo.gitdir:
+        # According to git(1), when GIT_DIR is not set, it is cwd + '.git'
+        repo.gitdir = os.path.join(os.path.realpath('.'), '.git')
+    debug("Git dir: %s" % repo.gitdir)
+
+    bzr_dir = os.path.join(repo.gitdir, "bzr")
+    try:
+        os.makedirs(bzr_dir)
+    except OSError, e:
+        # It's what we want if it already exists.
+        if e.errno != errno.EEXIST:
+            warn("Could not create %s, incremental history will not be used: %d %s" %
+                    (e.errno, e, bzr_dir))
+            repo.bzrdir = None
+        else:
+            repo.bzrdir = bzr_dir
+    else:
+        repo.bzrdir = bzr_dir
+    debug("Bzr data dir: %s" % repo.bzrdir)
 
     more = True
 
