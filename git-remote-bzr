@@ -70,7 +70,6 @@ def do_push(repo, args):
     if len(args) != 1:
         die("Push needs at least one refspec")
 
-    debug("Push got refspec: %s", args[0])
     src, dst = args[0].split(":", 1)
 
     if src.startswith("refs/heads/"):
