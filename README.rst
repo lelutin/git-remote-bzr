@@ -10,8 +10,8 @@ your curiosity.
 
 What may work:
 
-- small repositories
-- cloning local branches
+- somewhat small repositories
+- cloning local and remote branches
 - using differential import (although pushing is currently broken -- see below)
 
 What's being stopped by bugs in dependencies
