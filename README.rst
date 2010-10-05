@@ -39,3 +39,26 @@ Usage
 1. export the directory that contains git-remote-bzr to your PATH variable for git to find it
 2. git clone bzr::url-of-bzr-repository  # Here the url after bzr:: can be anything that bzr accepts
 
+
+Testing
+-------
+
+A test file is included in the t/ directory. However, this file depends on
+git's test-lib.sh to work. Since the latter needs to be in a git repository, I
+won't create a special version of test-lib.sh just so that it can be used
+independantly. The file is included here in order to have everything in a small
+repository to make it easier to review.
+
+If you are interested in running the tests, check out my git mirror at:
+
+http://github.com/lelutin/git
+
+Make sure you are on the 'remote-bzr' branch and run 'make' on the top level.
+You will then be able to cd into the t/ directory and run only remote-bzr's
+tests by issuing the following command:
+
+./t5810-remote-bzr.sh
+
+Before running the test, you either need to install 'bzr-fastimport' in a
+site-wide location, or to export the BZR_PLUGIN_PATH environment variable with
+the absolute path to the directory that contains the plugin.
