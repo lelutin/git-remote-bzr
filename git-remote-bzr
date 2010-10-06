@@ -62,7 +62,9 @@ def do_import(repo, args):
 
     debug("Calling sub-command: %s", ' '.join(cmd))
     bzrp = subprocess.Popen(cmd + [repo.url])
-    bzrp.wait()
+    if bzrp.wait():
+        die("'bzr fast-export' returned unexpectedly with code %d",
+            bzrp.returncode)
 
 
 def do_push(repo, args):
@@ -96,7 +98,7 @@ def do_push(repo, args):
     bzrp = subprocess.Popen(bzr_cmd, stdin=gitp.stdout)
     bzrp.wait()
 
-    debug("bzr fast-import return code: %d" % bzrp.returncode)
+    debug("'bzr fast-import' return code: %d" % bzrp.returncode)
     if bzrp.returncode:
         print "error %s 'bzr fast-import returned with code %d'" % (
                 dst, bzrp.returncode)
