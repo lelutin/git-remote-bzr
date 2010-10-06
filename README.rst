@@ -12,17 +12,24 @@ What may work:
 
 - somewhat small repositories
 - cloning local and remote branches
-- using differential import (although pushing is currently broken -- see below)
 
 What's being stopped by bugs in dependencies
 
-- pushing (I've fixed a bug on Ian's branch -- see below -- but I've hit another one with using mark_files)
+- pushing [1]
+- using differential import (marks files) [2]
+- importing more than once (intermittent bug) [3]
 
 What certainly doesn't:
 
 - empty repositories
 - listing remote refs (Bzr doesn't support it via HTTP -- one remote per branch will do the trick)
 
+Relevant bug reports
+--------------------
+
+[1]:https://bugs.launchpad.net/bzr-fastimport/+bug/347729 (I've fixed a bug on Ian's branch but I've hit another one with using mark_files)
+[2]:https://bugs.launchpad.net/bzr-fastimport/+bug/655839 (differential pull + tags is broken)
+[3]:https://bugs.launchpad.net/bzr-fastimport/+bug/541626
 
 Requirements
 ------------
@@ -30,7 +37,8 @@ Requirements
 - git 1.6.6 or later
 - python 2.5 +
 - bzr 2.x
-- bzr-fastimport : for now, only the branch lp:~ian-clatworthy/bzr-fastimport/new-marks-format with the patch inside patches/fastimport-sane-marks.patch works for pushing back your commits to the bzr branch. With g-r-b being the full path to the git-remote-bzr source directory, do: (mkdir -p ~/.bazaar/plugins/; cd ~/.bazaar/plugins; bzr branch lp:~ian-clatworthy/bzr-fastimport/new-marks-format fastimport; patch -p0 < g-r-b/patches/fastimport-sane-marks.patch)
+- bzr-fastimport
+  - (this branch is now ~50 commits behind trunk) for now, only the branch lp:~ian-clatworthy/bzr-fastimport/new-marks-format with the patch inside patches/fastimport-sane-marks.patch works for pushing back your commits to the bzr branch. With g-r-b being the full path to the git-remote-bzr source directory, do: (mkdir -p ~/.bazaar/plugins/; cd ~/.bazaar/plugins; bzr branch lp:~ian-clatworthy/bzr-fastimport/new-marks-format fastimport; patch -p0 < g-r-b/patches/fastimport-sane-marks.patch)
 
 
 Usage
