@@ -1,6 +1,8 @@
 git-remote-bzr
 ==============
 
+NOTE: This project has been abandoned before reaching completion. You may be interested in [felipec's git-remote-bzr](https://github.com/felipec/git-remote-bzr) which is a more advanced remote support for bzr in git which also supports push.
+
 This is a Bazaar remote helper for git. It uses the remote helpers
 functionality introduced recently in git.
 
@@ -23,8 +25,6 @@ What certainly doesn't:
 
 - empty repositories
 - listing remote refs (Bzr doesn't support it via HTTP -- one remote per branch will do the trick)
-
-You may be interested in [felipec's git-remote-bzr](https://github.com/felipec/git-remote-bzr) which is a more advanced remote support for bzr in git which also supports push.
 
 Relevant bug reports
 --------------------
