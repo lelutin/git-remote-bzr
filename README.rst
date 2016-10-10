@@ -24,6 +24,8 @@ What certainly doesn't:
 - empty repositories
 - listing remote refs (Bzr doesn't support it via HTTP -- one remote per branch will do the trick)
 
+You may be interested in [felipec's git-remote-bzr](https://github.com/felipec/git-remote-bzr) which is a more advanced remote support for bzr in git which also supports push.
+
 Relevant bug reports
 --------------------
 
