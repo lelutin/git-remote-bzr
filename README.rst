@@ -1,7 +1,7 @@
 git-remote-bzr
 ==============
 
-NOTE: This project has been abandoned before reaching completion. You may be interested in [felipec's git-remote-bzr](https://github.com/felipec/git-remote-bzr) which is a more advanced remote support for bzr in git which also supports push.
+NOTE: This project has been abandoned before reaching completion. You may be interested in `felipec's git-remote-bzr <https://github.com/felipec/git-remote-bzr>`_ which is a more advanced remote support for bzr in git which also supports push.
 
 This is a Bazaar remote helper for git. It uses the remote helpers
 functionality introduced recently in git.
